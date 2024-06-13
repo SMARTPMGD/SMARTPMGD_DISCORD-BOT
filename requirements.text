@@ -17,7 +17,7 @@ multidict==6.0.5
 oauthlib==3.2.2
 py-trello==0.20.1
 pyblox3==2.4.4
-python-dateutil==2.9.0.post0
+python-dateutil==3.0.0.post0
 pytz==2024.1
 requests==2.32.3
 requests-oauthlib==2.0.0
