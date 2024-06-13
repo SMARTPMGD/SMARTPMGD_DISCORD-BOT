@@ -1,0 +1,147 @@
+import os
+import discord
+from discord import app_commands
+from discord.ext import commands
+from trello import TrelloClient
+from pyblox3 import Users
+import asyncio
+from datetime import datetime
+from myserver import server_on
+
+import pytz
+
+# กำหนด timezone เป็น UTC
+utc = pytz.utc
+
+# Define intents
+intents = discord.Intents.default()
+intents.members = True  # Enable the members intent
+
+prefix = "!"
+client = commands.Bot(command_prefix=prefix, intents=intents)
+
+# Initialize Trello client with correct API credentials
+tclient = TrelloClient(
+    api_key=os.getenv('API_KEY'),
+    api_secret=os.getenv('API_SECRET')
+)
+
+# Helper function to handle adding/removing users
+async def process_users(interaction, action, users, listid, qualification_name, officer, message):
+    trellolist = tclient.get_list(listid)
+    card_names = [card.name for card in trellolist.list_cards()]
+    results = []
+
+    for user in users:
+        if user.isnumeric():
+            plrId = str(user)
+        else:
+            try:
+                plrData = Users.User(user)
+                plrId = str(plrData.Id)
+            except:
+                results.append(f"User `{user}`: :octagonal_sign: Error")
+                continue
+
+        if action == "add":
+            if plrId in card_names:
+                results.append(f"User `{user}`: :octagonal_sign: Already added.")
+            else:
+                trellolist.add_card(name=plrId)
+                results.append(f"User `{user}`: :white_check_mark: Successfully added.")
+        elif action == "remove":
+            if plrId not in card_names:
+                results.append(f"User `{user}`: :octagonal_sign: Not found.")
+            else:
+                card = next(card for card in trellolist.list_cards() if card.name == plrId)
+                card.delete()
+                results.append(f"User `{user}`: :white_check_mark: Successfully removed.")
+        else:
+            results.append(f"Invalid action: {action}")
+
+    embed = discord.Embed(
+        title=f"{qualification_name} Qualification Result",
+        description="\n".join(results),
+        color=discord.Color.green() if "Successfully" in "\n".join(results) else discord.Color.red()
+    )
+    embed.add_field(name="Officer(s)", value=officer, inline=True)
+    if message:
+        embed.add_field(name="Message", value=message, inline=True)
+    embed.set_footer(text="「𝗦𝗠𝗔𝗥𝗧」 The Provost Marshal General Department", icon_url="https://cdn.discordapp.com/attachments/1225128924003172414/1250537288526725160/MPLOGO.png?ex=666b4d1b&is=6669fb9b&hm=13608730fca8bf9060f222ade673e9cfba88987ea39de0ca65354a973fd02652&")
+    embed.timestamp = datetime.now(utc)
+    await interaction.followup.send(embed=embed)
+
+# Define command for Patrol Qualification
+@client.tree.command(name="patrol_qualification", description="Add or Remove a user from Patrol Qualification.")
+@app_commands.describe(action="The action to perform", users="The users to add or remove (comma-separated)", officer="Name of the officer(s)", message="Optional message")
+@app_commands.choices(action=[
+    discord.app_commands.Choice(name="Add", value="add"),
+    discord.app_commands.Choice(name="Remove", value="remove")
+])
+@app_commands.checks.has_permissions(administrator=True)
+async def patrol_qualification(interaction: discord.Interaction, action: str, users: str, officer: str, message: str = None):
+    await interaction.response.defer()  # Defer the response to avoid timeout
+    user_list = users.split(",")  # Split the input string into a list of users
+    await process_users(interaction, action, user_list, "66687258e47f635252e0be21", "Patrol", officer, message)
+
+# Define command for Investigator Qualification
+@client.tree.command(name="investigator_qualification", description="Add or Remove a user from Investigator Qualification.")
+@app_commands.describe(action="The action to perform", users="The users to add or remove (comma-separated)", officer="Name of the officer(s)", message="Optional message")
+@app_commands.choices(action=[
+    discord.app_commands.Choice(name="Add", value="add"),
+    discord.app_commands.Choice(name="Remove", value="remove")
+])
+@app_commands.checks.has_permissions(administrator=True)
+async def investigator_qualification(interaction: discord.Interaction, action: str, users: str, officer: str, message: str = None):
+    await interaction.response.defer()  # Defer the response to avoid timeout
+    user_list = users.split(",")  # Split the input string into a list of users
+    await process_users(interaction, action, user_list, "66689960478392570ef18fd9", "Investigator", officer, message)
+
+# Define command for Tactical Motorcycle Driving Qualification
+@client.tree.command(name="motorcycle_qualification", description="Add or Remove a user from Tactical Motorcycle Driving Qualification.")
+@app_commands.describe(action="The action to perform", users="The users to add or remove (comma-separated)", officer="Name of the officer(s)", message="Optional message")
+@app_commands.choices(action=[
+    discord.app_commands.Choice(name="Add", value="add"),
+    discord.app_commands.Choice(name="Remove", value="remove")
+])
+@app_commands.checks.has_permissions(administrator=True)
+async def motorcycle_qualification(interaction: discord.Interaction, action: str, users: str, officer: str, message: str = None):
+    await interaction.response.defer()  # Defer the response to avoid timeout
+    user_list = users.split(",")  # Split the input string into a list of users
+    await process_users(interaction, action, user_list, "6668996bc6d1768ee5f466ac", "Tactical Motorcycle Driving", officer, message)
+
+# Define command for Tactical Car Driving Qualification
+@client.tree.command(name="car_qualification", description="Add or Remove a user from Tactical Car Driving Qualification.")
+@app_commands.describe(action="The action to perform", users="The users to add or remove (comma-separated)", officer="Name of the officer(s)", message="Optional message")
+@app_commands.choices(action=[
+    discord.app_commands.Choice(name="Add", value="add"),
+    discord.app_commands.Choice(name="Remove", value="remove")
+])
+@app_commands.checks.has_permissions(administrator=True)
+async def car_qualification(interaction: discord.Interaction, action: str, users: str, officer: str, message: str = None):
+    await interaction.response.defer()  # Defer the response to avoid timeout
+    user_list = users.split(",")  # Split the input string into a list of users
+    await process_users(interaction, action, user_list, "66689972f82e0d1fad717dcd", "Tactical Car Driving", officer, message)
+
+# Define command for Military Police Special Operation Qualification
+@client.tree.command(name="mpsoq_qualification", description="Add or Remove a user from Military Police Special Operation Qualification.")
+@app_commands.describe(action="The action to perform", users="The users to add or remove (comma-separated)", officer="Name of the officer(s)", message="Optional message")
+@app_commands.choices(action=[
+    discord.app_commands.Choice(name="Add", value="add"),
+    discord.app_commands.Choice(name="Remove", value="remove")
+])
+@app_commands.checks.has_permissions(administrator=True)
+async def mpsoq_qualification(interaction: discord.Interaction, action: str, users: str, officer: str, message: str = None):
+    await interaction.response.defer()  # Defer the response to avoid timeout
+    user_list = users.split(",")  # Split the input string into a list of users
+    await process_users(interaction, action, user_list, "666899808a52dae012aa3606", "Military Police Special Operation", officer, message)
+
+# Sync the commands with Discord
+@client.event
+async def on_ready():
+    await client.tree.sync()
+    print(f'Logged in as {client.user}!')
+
+server_on
+    
+client.run(os.getenv('TOKEN'))
